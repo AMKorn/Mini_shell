@@ -2,10 +2,12 @@
 
 static struct info_process jobs_list[N_JOBS];
 int status;
+char *arg;
 
-int main() {
+int main(int argc, char *argv[]) {
 	jobs_list[0].pid=0; // porque no tenemos ningun hijo en ejecucion
-	//signal(SIGINT,ctrlc);
+    arg = argv[0];
+	signal(SIGINT,ctrlc);
 	signal(SIGCHLD,reaper);
     char line[COMMAND_LINE_SIZE];
     while (read_line(line))
@@ -229,11 +231,28 @@ int execute_line(char *line) {
 }
 
 void reaper(int signum){
+    signal(SIGCHLD, reaper);
     pid_t pid;
     while ((pid=waitpid(-1, &status, WNOHANG)) > 0) {
         if (pid==jobs_list[0].pid){
             jobs_list[0].pid=0;
         }
-        signal(SIGCHLD, reaper);
+    }
+}
+
+void ctrlc(int signum){
+    signal(SIGINT, ctrlc);  
+    if(jobs_list[0].pid > 0){
+        fprintf(stdin, "Hola estoy aqui");
+        fflush(stdin);
+        printf("%s \n, %s \n", jobs_list[0].command_line, arg);
+        fflush(stdin);
+        if(strcmp(jobs_list[0].command_line, arg)==0){
+            kill(jobs_list[0].pid, SIGTERM);
+        } else {
+            fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es el mini_shell\n");
+        }
+    } else {
+        fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
     }
 }
