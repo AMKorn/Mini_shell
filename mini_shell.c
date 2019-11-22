@@ -196,7 +196,8 @@ int execute_line(char *line) {
         else if (pid == 0) {
             signal(SIGCHLD, SIG_DFL);
 		    signal(SIGINT, SIG_IGN);
-            printf("[execute_line()→ PID padre: %d]\n[execute_line()→ PID hijo: %d]\n", getppid(), getpid());
+            printf("[execute_line()→ PID padre: %d]\n", getppid());
+            fflush(stdout);
             if (execvp(args[0], args) < 0) {
                 //perror(*args);
                 fprintf(stderr, "Error: Comando \'%s\' no encontrado\n", *args);
@@ -209,6 +210,11 @@ int execute_line(char *line) {
             jobs_list[0].pid = pid;
             jobs_list[0].status = 'E';
             strcpy(jobs_list[0].command_line, og_line); 
+            //printf("[execute_line()→ PID hijo: %d]\n", pid);
+            printf("pid: %d\n", pid);
+            printf("getppid: %d\n", getppid());
+            printf("getpid: %d\n", getpid());
+            fflush(stdout);
             //printf("%d, %c, %s\n", jobs_list[0].pid, jobs_list[0].status, jobs_list[0].command_line);
             while(jobs_list[0].pid!=0){
                 pause();
@@ -241,16 +247,19 @@ void reaper(int signum){
 }
 
 void ctrlc(int signum){
-    signal(SIGINT, ctrlc);  
-    if(jobs_list[0].pid > 0){
+    signal(SIGINT, ctrlc);
+    printf("PID DESDE CTRLC: %d\n", jobs_list[0].pid);
+    fflush(stdout);
+    if(jobs_list[0].pid){
         fprintf(stdin, "Hola estoy aqui");
         fflush(stdin);
         printf("%s \n, %s \n", jobs_list[0].command_line, arg);
         fflush(stdin);
-        if(strcmp(jobs_list[0].command_line, arg)==0){
+        if(strcmp(jobs_list[0].command_line, arg)!=0){
+            fprintf(stderr, "Proceso a terminar: '%s'\n", jobs_list[0].command_line);
             kill(jobs_list[0].pid, SIGTERM);
         } else {
-            fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es el mini_shell\n");
+            fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es el mini_shell: %s\n", jobs_list[0].command_line);
         }
     } else {
         fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
