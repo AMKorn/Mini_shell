@@ -211,11 +211,6 @@ int execute_line(char *line) {
             printf("%s\n", jobs_list[0].command_line);
             while(jobs_list[0].pid!=0){
                 pause();
-                if (WIFEXITED(status)) {
-                    printf("[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
-                } else if (WIFSIGNALED(status)) {
-                    printf("[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
-                }
             }
         }
     }
@@ -230,6 +225,11 @@ void reaper(int signum){
             jobs_list[0].pid = 0;
             jobs_list[0].status = 'F';
             jobs_list[0].command_line[0] = '\0';
+            if (WIFEXITED(status)) {
+                printf("[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
+            } else if (WIFSIGNALED(status)) {
+                printf("[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
+            }
         }
     }
 }
