@@ -259,7 +259,7 @@ void ctrlc(int signum){
             fprintf(stderr, "Proceso a terminar: '%s'\n", jobs_list[0].command_line);
             kill(jobs_list[0].pid, SIGTERM);
         } else {
-            fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es el mini_shell: %s\n", jobs_list[0].command_line);
+            fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es: %s\n", jobs_list[0].command_line);
         }
     } else {
         fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
