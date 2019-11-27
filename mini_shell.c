@@ -248,6 +248,7 @@ void reaper(int signum){
 
 void ctrlc(int signum){
     signal(SIGINT, ctrlc);
+<<<<<<< HEAD
     printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
     fflush(stdout);
     if(jobs_list[0].pid){
@@ -256,6 +257,17 @@ void ctrlc(int signum){
         fflush(stdin);
         if(strcmp(jobs_list[0].command_line, arg)!=0){
             fprintf(stderr, "Proceso a terminar: %s", jobs_list[0].command_line);
+=======
+    printf("PID DESDE CTRLC: %d\n", jobs_list[0].pid);
+    fflush(stdout);
+    if(jobs_list[0].pid){
+        fprintf(stdin, "Hola estoy aqui");
+        fflush(stdin);
+        printf("%s \n, %s \n", jobs_list[0].command_line, arg);
+        fflush(stdin);
+        if(strcmp(jobs_list[0].command_line, arg)!=0){
+            fprintf(stderr, "Proceso a terminar: '%s'\n", jobs_list[0].command_line);
+>>>>>>> ac2977364c0d3448bb6f5df80ed90a99ef959694
             kill(jobs_list[0].pid, SIGTERM);
         } else {
             fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es el mini_shell: %s\n", jobs_list[0].command_line);

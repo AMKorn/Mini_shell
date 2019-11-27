@@ -34,6 +34,7 @@ int internal_export();
 int internal_jobs();
 int internal_source();
 void reaper();
+void ctrlc();
 
 struct info_process {
 	pid_t pid;
