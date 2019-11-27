@@ -18,8 +18,21 @@ int main(int argc, char *argv[]) {
 // Prints the prompt and then reads the command introduced by the user.
 char *read_line(char *line) {
     printf(PROMPT);
-    fflush(stdout);
-    return fgets(line, COMMAND_LINE_SIZE, stdin);
+    fflush(stdout);   
+    char *ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
+
+    if (!ptr) {  //ptr==NULL
+        printf("\r");
+        if (feof(stdin)) { //feof(stdin!=0)
+            exit(0);
+        }
+        else {
+            ptr = line; // si no al pulsar inicialmente CTRL+C sale fuera del shell
+            ptr[0] = 0; // Si se omite esta línea aparece error ejecución ": no se encontró la orden"*/
+        }
+   }
+
+   return ptr;
 }
 
 int internal_cd(char **args) {
@@ -225,9 +238,9 @@ void ctrlc(int signum){
     signal(SIGINT, ctrlc);
     printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
     fflush(stdout);
-    if(jobs_list[0].pid){
-        if(strcmp(jobs_list[0].command_line, arg)!=0){
-            fprintf(stderr, "Proceso a terminar: %s", jobs_list[0].command_line);
+    if(jobs_list[0].pid>0){
+        if(strcmp(jobs_list[0].command_line, arg)-10!=0){      // (jobs_list[0].command_line == arg)
+            fprintf(stderr, "Proceso a terminar: %s \nDiferencia con %s: %d\n", jobs_list[0].command_line, arg, strcmp(jobs_list[0].command_line, arg));
             kill(jobs_list[0].pid, SIGTERM);
         } else {
             fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es: %s\n", jobs_list[0].command_line);
