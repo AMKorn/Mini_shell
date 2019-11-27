@@ -2,10 +2,12 @@
 
 static struct info_process jobs_list[N_JOBS];
 int status;
+char *arg;
 
-int main() {
+int main(int argc, char *argv[]) {
 	jobs_list[0].pid=0; // porque no tenemos ningun hijo en ejecucion
-	//signal(SIGINT,ctrlc);
+    arg = argv[0];
+	signal(SIGINT,ctrlc);
 	signal(SIGCHLD,reaper);
     char line[COMMAND_LINE_SIZE];
     while (read_line(line))
@@ -194,7 +196,8 @@ int execute_line(char *line) {
         else if (pid == 0) {
             signal(SIGCHLD, SIG_DFL);
 		    signal(SIGINT, SIG_IGN);
-            printf("[execute_line()→ PID padre: %d]\n[execute_line()→ PID hijo: %d]\n", getppid(), getpid());
+            printf("[execute_line()→ PID padre: %d]\n", getppid());
+            fflush(stdout);
             if (execvp(args[0], args) < 0) {
                 //perror(*args);
                 fprintf(stderr, "Error: Comando \'%s\' no encontrado\n", *args);
@@ -207,6 +210,11 @@ int execute_line(char *line) {
             jobs_list[0].pid = pid;
             jobs_list[0].status = 'E';
             strcpy(jobs_list[0].command_line, og_line); 
+            //printf("[execute_line()→ PID hijo: %d]\n", pid);
+            printf("pid: %d\n", pid);
+            printf("getppid: %d\n", getppid());
+            printf("getpid: %d\n", getpid());
+            fflush(stdout);
             //printf("%d, %c, %s\n", jobs_list[0].pid, jobs_list[0].status, jobs_list[0].command_line);
             while(jobs_list[0].pid!=0){
                 pause();
@@ -229,11 +237,30 @@ int execute_line(char *line) {
 }
 
 void reaper(int signum){
+    signal(SIGCHLD, reaper);
     pid_t pid;
     while ((pid=waitpid(-1, &status, WNOHANG)) > 0) {
         if (pid==jobs_list[0].pid){
             jobs_list[0].pid=0;
         }
-        signal(SIGCHLD, reaper);
+    }
+}
+
+void ctrlc(int signum){
+    signal(SIGINT, ctrlc);
+    printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
+    fflush(stdout);
+    if(jobs_list[0].pid){
+        fflush(stdin);
+        printf("%s%s \n", jobs_list[0].command_line, arg);
+        fflush(stdin);
+        if(strcmp(jobs_list[0].command_line, arg)!=0){
+            fprintf(stderr, "Proceso a terminar: %s", jobs_list[0].command_line);
+            kill(jobs_list[0].pid, SIGTERM);
+        } else {
+            fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es el mini_shell: %s\n", jobs_list[0].command_line);
+        }
+    } else {
+        fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
     }
 }
