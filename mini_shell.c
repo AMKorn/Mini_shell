@@ -248,15 +248,14 @@ void reaper(int signum){
 
 void ctrlc(int signum){
     signal(SIGINT, ctrlc);
-    printf("PID DESDE CTRLC: %d\n", jobs_list[0].pid);
+    printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
     fflush(stdout);
     if(jobs_list[0].pid){
-        fprintf(stdin, "Hola estoy aqui");
         fflush(stdin);
-        printf("%s \n, %s \n", jobs_list[0].command_line, arg);
+        printf("%s%s \n", jobs_list[0].command_line, arg);
         fflush(stdin);
         if(strcmp(jobs_list[0].command_line, arg)!=0){
-            fprintf(stderr, "Proceso a terminar: '%s'\n", jobs_list[0].command_line);
+            fprintf(stderr, "Proceso a terminar: %s", jobs_list[0].command_line);
             kill(jobs_list[0].pid, SIGTERM);
         } else {
             fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es: %s\n", jobs_list[0].command_line);
