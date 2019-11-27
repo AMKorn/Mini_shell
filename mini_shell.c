@@ -5,7 +5,7 @@ int status;
 char *arg;
 
 int main(int argc, char *argv[]) {
-	jobs_list[0].pid=0; // porque no tenemos ningun hijo en ejecucion
+	jobs_list[0].pid=0;     // As we don't have any son on foreground.
     arg = argv[0];
 	signal(SIGINT,ctrlc);
 	signal(SIGCHLD,reaper);
@@ -39,7 +39,6 @@ int internal_cd(char **args) {
         fprintf(stderr, "Error %d: %s \n", errno, strerror(errno));
         return -1;
     }
-    //char actual[COMMAND_LINE_SIZE];
     setenv("PWD", getcwd(NULL, 0), 1);
 
     return 0;
@@ -54,17 +53,12 @@ int internal_export(char **args) {
     char *name = strtok(args[1], "=");
     char *value = strtok(NULL, " \t\n\r");
 
-    //printf("[internal_export()→ Nombre: %s]\n", name);
-    //printf("[internal_export()→ Valor: %s]\n", value);
-
     if (!value) {
         fprintf(stderr, "Error de sintaxis. Uso: export Nombre=Valor\n");
         return -1;
     }
 
-    //printf("[internal_export()→ Antiguo valor para %s: %s]\n", name, getenv(name));
     setenv(name, value, 1);
-    //printf("[internal_export()→ Nuevo valor para %s: %s]\n", name, getenv(name));
 
     return 0;
 }
@@ -85,7 +79,6 @@ int internal_source(char **args) {
             char command[COMMAND_LINE_SIZE];
             while (fgets(command, COMMAND_LINE_SIZE, fp)){
                 fflush(fp);
-                //fprintf(stdout, "%s\n",command);
                 execute_line(command);
             }
             fclose(fp);
@@ -113,7 +106,6 @@ int parse_args(char **args, char *line) {
     int tokens = 0;
 
     args[tokens] = strtok(line, s);
-    //printf("[parse_args()→token %d: %s] \n", tokens, args[tokens]);
 
 
     while (args[tokens] != NULL) {
@@ -123,13 +115,12 @@ int parse_args(char **args, char *line) {
         
         if(args[tokens] != NULL && args[tokens][0] == '#'){
             args[tokens] = NULL;
-            //printf("[parse_args()→corrected token %d: %s] \n", tokens, args[tokens]);
         }
         
         // Joining arguments with double quotes
         if(args[tokens] != NULL && (strchr(args[tokens], '\"'))){   // Once we find simple or double quotes we ignore spaces until another simple or double quotes.
             int i = 0;
-            while(args[tokens][i]/* && args[tokens][i] != '\"'*/){      // However, the previous strtok already changed the next space with \0, so we have to change it again.
+            while(args[tokens][i]){      // However, the previous strtok already changed the next space with \0, so we have to change it again.
                 i++;
             }
             args[tokens][i] = ' ';
@@ -141,7 +132,7 @@ int parse_args(char **args, char *line) {
         // Joining arguments with simple quotes
         if(args[tokens] != NULL && strchr(args[tokens], '\'')){     // Once we find simple or double quotes we ignore spaces until another simple or double quotes.
             int i = 0;
-            while(args[tokens][i]/* && args[tokens][i] != '\''*/){      // However, the previous strtok already changed the next space with \0, so we have to change it again.
+            while(args[tokens][i]){      // However, the previous strtok already changed the next space with \0, so we have to change it again.
                 i++;
             }
             args[tokens][i] = ' ';
@@ -149,7 +140,6 @@ int parse_args(char **args, char *line) {
 
             args[tokens]++;
 	    }
-        //printf("[parse_args()→token %d: %s] \n", tokens, args[tokens]);
     }
     
     return tokens;
@@ -186,7 +176,7 @@ int execute_line(char *line) {
         pid_t pid = fork();
 
         if (pid < 0) {
-            perror("fork");
+            perror("No se pudo crear el proceso secundario.\n");
             exit(-1);
         }
         //Son process
@@ -205,11 +195,7 @@ int execute_line(char *line) {
             jobs_list[0].pid = pid;
             jobs_list[0].status = 'E';
             strcpy(jobs_list[0].command_line, og_line); 
-            printf("pid: %d\n", pid);
-            printf("getppid: %d\n", getppid());
-            printf("getpid: %d\n", getpid());
-            fflush(stdout);
-            //printf("%d, %c, %s\n", jobs_list[0].pid, jobs_list[0].status, jobs_list[0].command_line);
+            printf("%s\n", jobs_list[0].command_line);
             while(jobs_list[0].pid!=0){
                 pause();
                 if (WIFEXITED(status)) {
@@ -218,13 +204,6 @@ int execute_line(char *line) {
                     printf("[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
                 }
             }
-            /* wait(&status);
-            if (WIFEXITED(status)) {
-                printf("[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
-            }
-            else if (WIFSIGNALED(status)) {
-                printf("[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
-            } */
         }
     }
 
@@ -247,9 +226,6 @@ void ctrlc(int signum){
     printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
     fflush(stdout);
     if(jobs_list[0].pid){
-        fflush(stdin);
-        printf("%s%s \n", jobs_list[0].command_line, arg);
-        fflush(stdin);
         if(strcmp(jobs_list[0].command_line, arg)!=0){
             fprintf(stderr, "Proceso a terminar: %s", jobs_list[0].command_line);
             kill(jobs_list[0].pid, SIGTERM);
