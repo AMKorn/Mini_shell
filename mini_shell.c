@@ -10,8 +10,7 @@ int main(int argc, char *argv[]) {
 	signal(SIGINT,ctrlc);
 	signal(SIGCHLD,reaper);
     char line[COMMAND_LINE_SIZE];
-    while (read_line(line))
-    {
+    while (read_line(line)){
         execute_line(line);
     }
 }
@@ -185,8 +184,6 @@ int execute_line(char *line) {
 
     if (!check_internal(args)) {
         pid_t pid = fork();
-        //int ppid = getppid(); // Father pid
-        //int pid = getpid(); // Son pid
 
         if (pid < 0) {
             perror("fork");
@@ -199,18 +196,15 @@ int execute_line(char *line) {
             printf("[execute_line()→ PID padre: %d]\n", getppid());
             fflush(stdout);
             if (execvp(args[0], args) < 0) {
-                //perror(*args);
                 fprintf(stderr, "Error: Comando \'%s\' no encontrado\n", *args);
                 exit(EXIT_FAILURE);
             }
-            //exit(EXIT_FAILURE);
         }
         //Father process
         else {
             jobs_list[0].pid = pid;
             jobs_list[0].status = 'E';
             strcpy(jobs_list[0].command_line, og_line); 
-            //printf("[execute_line()→ PID hijo: %d]\n", pid);
             printf("pid: %d\n", pid);
             printf("getppid: %d\n", getppid());
             printf("getpid: %d\n", getpid());
@@ -241,7 +235,9 @@ void reaper(int signum){
     pid_t pid;
     while ((pid=waitpid(-1, &status, WNOHANG)) > 0) {
         if (pid==jobs_list[0].pid){
-            jobs_list[0].pid=0;
+            jobs_list[0].pid = 0;
+            jobs_list[0].status = 'F';
+            jobs_list[0].command_line[0] = '\0';
         }
     }
 }
