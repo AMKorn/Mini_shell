@@ -3,10 +3,16 @@
 static struct info_process jobs_list[N_JOBS];
 int status;
 char *arg;
+/////////////
+int n_pids;
+///////////////
 
 int main(int argc, char *argv[]) {
 	jobs_list[0].pid=0;     // As we don't have any son on foreground.
     arg = argv[0];
+    //////////
+    n_pids = 0;
+    ///////////
 	signal(SIGINT,ctrlc);
 	signal(SIGCHLD,reaper);
     char line[COMMAND_LINE_SIZE];
@@ -107,7 +113,11 @@ int internal_source(char **args) {
 }
 
 int internal_jobs(char **args) {
-    printf("[internal_jobs()→Esta función mostrará el PID de los procesos que no estén en foreground] \n");
+    //////////////////////////////////////////
+    for(int i = 1; jobs_list; i++){
+        printf("\n[%d]%d\t%c\t%s", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].command_line);
+    }
+    ////////////////////////////////////////
     return 0;
 }
 
@@ -196,6 +206,13 @@ int execute_line(char *line) {
         else if (pid == 0) {
             signal(SIGCHLD, SIG_DFL);
 		    signal(SIGINT, SIG_IGN);
+            //Si la señal esta en background ignora la señal, si no hace la ccion por defecto
+            if(is_background()){
+                signal(SIGTSTP, SIG_IGN);
+            } else {
+                signal(SIGTSTP, SIG_DFL);           
+            }
+            ////////////////////////
             printf("[execute_line()→ PID padre: %d]\n", getppid());
             fflush(stdout);
             if (execvp(args[0], args) < 0) {
@@ -205,30 +222,45 @@ int execute_line(char *line) {
         }
         //Father process
         else {
-            jobs_list[0].pid = pid;
-            jobs_list[0].status = 'E';
-            strcpy(jobs_list[0].command_line, og_line); 
-            printf("%s\n", jobs_list[0].command_line);
-            while(jobs_list[0].pid!=0){
-                pause();
+            /////////////////////
+            if(is_background()){
+                jobs_list_add(pid, 'E', og_line);
+            } else { //////////////////////////////////////
+                jobs_list[0].pid = pid;
+                jobs_list[0].status = 'E';
+                strcpy(jobs_list[0].command_line, og_line); 
+                printf("%s\n", jobs_list[0].command_line);
+                while(jobs_list[0].pid!=0){
+                    pause();
+                }
             }
         }
     }
-
 }
 
 void reaper(int signum){
     signal(SIGCHLD, reaper);
     pid_t pid;
     while ((pid=waitpid(-1, &status, WNOHANG)) > 0) {
-        if (pid==jobs_list[0].pid){
-            jobs_list[0].pid = 0;
-            jobs_list[0].status = 'F';
-            jobs_list[0].command_line[0] = '\0';
+        //////////////////////////////
+        if(is_background) {
+            int x = jobs_list_find(pid);
             if (WIFEXITED(status)) {
-                printf("[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
+                fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
             } else if (WIFSIGNALED(status)) {
-                printf("[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
+                fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
+            }
+            jobs_list_remove(x);
+        } else { ///////////////////////////////////////////
+            if (pid==jobs_list[0].pid){
+                jobs_list[0].pid = 0;
+                jobs_list[0].status = 'F';
+                jobs_list[0].command_line[0] = '\0';
+                if (WIFEXITED(status)) {
+                    printf("[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
+                } else if (WIFSIGNALED(status)) {
+                    printf("[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
+                }
             }
         }
     }
@@ -248,4 +280,55 @@ void ctrlc(int signum){
     } else {
         fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
     }
+}
+
+////////////////////////////////////////////////
+////////////////////////////////////////////////
+
+int is_background(char *command_line){
+    int x = -1;
+    for (int i = 0; command_line; i++){
+        if (command_line[i] == '&'){
+            x = 0;
+            command_line[i] = '\0';
+        }
+    }
+    return x;
+}
+
+int jobs_list_add(pid_t pid, char status, char *command_line){
+    if (n_pids<N_JOBS){
+        jobs_list[n_pids].pid = pid;
+        jobs_list[n_pids].status = status;
+        for (int i = 0; command_line; i++){
+            jobs_list[n_pids].command_line[i] = command_line[i];
+        }
+        n_pids++;
+    } else {
+        fprintf(stderr, "Error: jobs_list_add número maximo de trabajos alcanzado");
+    }
+}
+
+int jobs_list_find(pid_t pid){
+    for (int i = 0; i<N_JOBS; i++){
+        if (jobs_list[i].pid == pid) {
+            return i;
+        }
+    }
+}
+
+int  jobs_list_remove(int pos){
+    jobs_list[pos].pid = jobs_list[n_pids].pid;
+    jobs_list[pos].status = jobs_list[n_pids].status;
+    for (int i = 0; jobs_list[n_pids].command_line; i++){
+            jobs_list[pos].command_line[i] = jobs_list[n_pids].command_line[i];
+        }
+    
+    jobs_list[n_pids].pid = 0;
+    jobs_list[n_pids].status = 'F';
+    jobs_list[n_pids].command_line[0] = '\0';
+
+    n_pids--;
+
+    return 0;
 }
