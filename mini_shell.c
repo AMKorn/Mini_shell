@@ -7,6 +7,7 @@ int n_pids;
 
 int main(int argc, char *argv[]) {
 	jobs_list[0].pid=0;     // As we don't have any son on foreground.
+    jobs_list[1].pid=0;     // This way we avoid segmentation 
     arg = argv[0];
     n_pids = 0;
 	signal(SIGINT,ctrlc);
@@ -109,8 +110,13 @@ int internal_source(char **args) {
 }
 
 int internal_jobs(char **args) {
-    for(int i = 1; jobs_list; i++){
+    int i = 1;
+    while(jobs_list[i] != NULL && jobs_list[i].pid!=0){
         printf("\n[%d]%d\t%c\t%s", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].command_line);
+       /* for(int i = 1; jobs_list[i].pid; i++){
+            printf("\n[%d]%d\t%c\t%s", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].command_line);
+        }*/
+        i++;
     }
     return 0;
 }
@@ -296,7 +302,7 @@ int jobs_list_add(pid_t pid, char status, char *command_line){
     } else {
         fprintf(stderr, "Error: jobs_list_add número maximo de trabajos alcanzado");
         return EXIT_FAILURE;
-    }   
+    }
 }
 
 int jobs_list_find(pid_t pid){

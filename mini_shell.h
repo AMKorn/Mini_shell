@@ -35,7 +35,7 @@ int internal_jobs();
 int internal_source();
 void reaper();
 void ctrlc();
-int jobs_list_add();
+int jobs_list_add(pid_t pid, char status, char *command_line);
 int jobs_list_find();
 int jobs_list_remove();
 int is_background();
