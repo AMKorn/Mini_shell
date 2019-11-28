@@ -35,7 +35,6 @@ int internal_jobs();
 int internal_source();
 void reaper();
 void ctrlc();
-/////////////////
 int jobs_list_add();
 int jobs_list_find();
 int jobs_list_remove();

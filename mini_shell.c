@@ -3,16 +3,12 @@
 static struct info_process jobs_list[N_JOBS];
 int status;
 char *arg;
-/////////////
 int n_pids;
-///////////////
 
 int main(int argc, char *argv[]) {
 	jobs_list[0].pid=0;     // As we don't have any son on foreground.
     arg = argv[0];
-    //////////
     n_pids = 0;
-    ///////////
 	signal(SIGINT,ctrlc);
 	signal(SIGCHLD,reaper);
     char line[COMMAND_LINE_SIZE];
@@ -113,11 +109,9 @@ int internal_source(char **args) {
 }
 
 int internal_jobs(char **args) {
-    //////////////////////////////////////////
     for(int i = 1; jobs_list; i++){
         printf("\n[%d]%d\t%c\t%s", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].command_line);
     }
-    ////////////////////////////////////////
     return 0;
 }
 
@@ -194,10 +188,10 @@ int execute_line(char *line) {
     strcpy(og_line, line);
     char *args[ARGS_SIZE];
     parse_args(args, line);
+    int x = is_background(og_line);
 
     if (!check_internal(args)) {
         pid_t pid = fork();
-
         if (pid < 0) {
             perror("No se pudo crear el proceso secundario.\n");
             exit(-1);
@@ -207,12 +201,11 @@ int execute_line(char *line) {
             signal(SIGCHLD, SIG_DFL);
 		    signal(SIGINT, SIG_IGN);
             //Si la señal esta en background ignora la señal, si no hace la ccion por defecto
-            if(is_background()){
+            if(x){
                 signal(SIGTSTP, SIG_IGN);
             } else {
                 signal(SIGTSTP, SIG_DFL);           
             }
-            ////////////////////////
             printf("[execute_line()→ PID padre: %d]\n", getppid());
             fflush(stdout);
             if (execvp(args[0], args) < 0) {
@@ -222,10 +215,9 @@ int execute_line(char *line) {
         }
         //Father process
         else {
-            /////////////////////
-            if(is_background()){
+            if(x){
                 jobs_list_add(pid, 'E', og_line);
-            } else { //////////////////////////////////////
+            } else {
                 jobs_list[0].pid = pid;
                 jobs_list[0].status = 'E';
                 strcpy(jobs_list[0].command_line, og_line); 
@@ -242,7 +234,6 @@ void reaper(int signum){
     signal(SIGCHLD, reaper);
     pid_t pid;
     while ((pid=waitpid(-1, &status, WNOHANG)) > 0) {
-        //////////////////////////////
         if(is_background) {
             int x = jobs_list_find(pid);
             if (WIFEXITED(status)) {
@@ -251,7 +242,7 @@ void reaper(int signum){
                 fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
             }
             jobs_list_remove(x);
-        } else { ///////////////////////////////////////////
+        } else {
             if (pid==jobs_list[0].pid){
                 jobs_list[0].pid = 0;
                 jobs_list[0].status = 'F';
@@ -282,9 +273,6 @@ void ctrlc(int signum){
     }
 }
 
-////////////////////////////////////////////////
-////////////////////////////////////////////////
-
 int is_background(char *command_line){
     int x = -1;
     for (int i = 0; command_line; i++){
@@ -304,9 +292,11 @@ int jobs_list_add(pid_t pid, char status, char *command_line){
             jobs_list[n_pids].command_line[i] = command_line[i];
         }
         n_pids++;
+        return EXIT_SUCCESS;
     } else {
         fprintf(stderr, "Error: jobs_list_add número maximo de trabajos alcanzado");
-    }
+        return EXIT_FAILURE;
+    }   
 }
 
 int jobs_list_find(pid_t pid){
