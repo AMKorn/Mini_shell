@@ -110,15 +110,15 @@ int internal_source(char **args) {
 }
 
 int internal_jobs(char **args) {
-    int i = 1;
+    /*int i = 1;
     while(jobs_list[i] != NULL && jobs_list[i].pid!=0){
         printf("\n[%d]%d\t%c\t%s", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].command_line);
        /* for(int i = 1; jobs_list[i].pid; i++){
             printf("\n[%d]%d\t%c\t%s", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].command_line);
-        }*/
+        }
         i++;
     }
-    return 0;
+    return 0;*/
 }
 
 
@@ -194,7 +194,7 @@ int execute_line(char *line) {
     strcpy(og_line, line);
     char *args[ARGS_SIZE];
     parse_args(args, line);
-    int x = is_background(og_line);
+    int x = is_background(args);
 
     if (!check_internal(args)) {
         pid_t pid = fork();
@@ -279,15 +279,17 @@ void ctrlc(int signum){
     }
 }
 
-int is_background(char *command_line){
-    int x = -1;
-    for (int i = 0; command_line; i++){
-        if (command_line[i] == '&'){
-            x = 0;
-            command_line[i] = '\0';
+int is_background(char **args){
+    int i = 1;
+    int found = 0;
+    while(args[i] && !found){
+        if(strcmp(args[i],"&") == 0){ // args[i] == '&'
+            args[i] = "\0";
+            found = 1;
         }
+        i++;
     }
-    return x;
+    return found;
 }
 
 int jobs_list_add(pid_t pid, char status, char *command_line){
@@ -316,9 +318,7 @@ int jobs_list_find(pid_t pid){
 int  jobs_list_remove(int pos){
     jobs_list[pos].pid = jobs_list[n_pids].pid;
     jobs_list[pos].status = jobs_list[n_pids].status;
-    for (int i = 0; jobs_list[n_pids].command_line; i++){
-            jobs_list[pos].command_line[i] = jobs_list[n_pids].command_line[i];
-        }
+    strcpy(jobs_list[pos].command_line, jobs_list[n_pids].command_line);
     
     jobs_list[n_pids].pid = 0;
     jobs_list[n_pids].status = 'F';
