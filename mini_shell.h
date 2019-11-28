@@ -25,20 +25,21 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-char* read_line();
-int execute_line();
-int parse_args();
-int check_internal();
-int internal_cd();
-int internal_export();
-int internal_jobs();
-int internal_source();
-void reaper();
-void ctrlc();
+char* read_line(char *line);
+int execute_line(char *line);
+int parse_args(char **args, char *line);
+int check_internal(char **args);
+int internal_cd(char **args);
+int internal_export(char **args);
+int internal_jobs(char **args);
+int internal_source(char **args);
+void reaper(int signum);
+void ctrlc(int signum);
 int jobs_list_add(pid_t pid, char status, char *command_line);
-int jobs_list_find();
-int jobs_list_remove();
-int is_background();
+int jobs_list_find(pid_t pid);
+int jobs_list_remove(int pos);
+int is_background(char *command_line);
+void ctrlz(int signum);
 
 
 struct info_process {
