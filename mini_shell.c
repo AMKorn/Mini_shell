@@ -212,7 +212,7 @@ int execute_line(char *line) {
             } else {
                 signal(SIGTSTP, SIG_DFL);           
             }
-            printf("[execute_line()→ PID padre: %d]\n", getppid());
+            //printf("[execute_line()→ PID padre: %d]\n", getppid());
             fflush(stdout);
             if (execvp(args[0], args) < 0) {
                 fprintf(stderr, "Error: Comando \'%s\' no encontrado\n", *args);
@@ -227,7 +227,7 @@ int execute_line(char *line) {
                 jobs_list[0].pid = pid;
                 jobs_list[0].status = 'E';
                 strcpy(jobs_list[0].command_line, og_line); 
-                printf("%s\n", jobs_list[0].command_line);
+                //printf("%s\n", jobs_list[0].command_line);
                 while(jobs_list[0].pid!=0){
                     pause();
                 }
@@ -240,12 +240,12 @@ void reaper(int signum){
     signal(SIGCHLD, reaper);
     pid_t pid;
     while ((pid=waitpid(-1, &status, WNOHANG)) > 0) {
-        if(is_background) {
+        if(jobs_list[1].pid) {
             int x = jobs_list_find(pid);
             if (WIFEXITED(status)) {
-                fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
+                //fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
             } else if (WIFSIGNALED(status)) {
-                fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
+                //fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
             }
             jobs_list_remove(x);
         } else {
@@ -254,7 +254,7 @@ void reaper(int signum){
                 jobs_list[0].status = 'F';
                 jobs_list[0].command_line[0] = '\0';
                 if (WIFEXITED(status)) {
-                    printf("[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
+                    //printf("[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
                 } else if (WIFSIGNALED(status)) {
                     printf("[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
                 }
@@ -284,7 +284,7 @@ int is_background(char **args){
     int found = 0;
     while(args[i] && !found){
         if(strcmp(args[i],"&") == 0){ // args[i] == '&'
-            args[i] = "\0";
+            args[i] = NULL;
             found = 1;
         }
         i++;
@@ -293,12 +293,10 @@ int is_background(char **args){
 }
 
 int jobs_list_add(pid_t pid, char status, char *command_line){
-    if (n_pids<N_JOBS){
+    if (n_pids < N_JOBS){
         jobs_list[n_pids].pid = pid;
         jobs_list[n_pids].status = status;
-        for (int i = 0; command_line; i++){
-            jobs_list[n_pids].command_line[i] = command_line[i];
-        }
+        strcpy(jobs_list[n_pids].command_line, command_line);
         n_pids++;
         return EXIT_SUCCESS;
     } else {
@@ -316,15 +314,18 @@ int jobs_list_find(pid_t pid){
 }
 
 int  jobs_list_remove(int pos){
-    jobs_list[pos].pid = jobs_list[n_pids].pid;
-    jobs_list[pos].status = jobs_list[n_pids].status;
-    strcpy(jobs_list[pos].command_line, jobs_list[n_pids].command_line);
-    
-    jobs_list[n_pids].pid = 0;
-    jobs_list[n_pids].status = 'F';
-    jobs_list[n_pids].command_line[0] = '\0';
+    if (n_pids > 0){
+        jobs_list[pos].pid = jobs_list[n_pids].pid;
+        jobs_list[pos].status = jobs_list[n_pids].status;
+        strcpy(jobs_list[pos].command_line, jobs_list[n_pids].command_line);
+        
+        jobs_list[n_pids].pid = 0;
+        jobs_list[n_pids].status = 'F';
+        jobs_list[n_pids].command_line[0] = '\0';
 
-    n_pids--;
-
-    return 0;
+        n_pids--;
+        return EXIT_SUCCESS;
+    } else {
+        return EXIT_FAILURE;
+    }
 }
