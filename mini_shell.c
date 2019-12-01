@@ -282,10 +282,10 @@ void ctrlz(int signum){
             jobs_list[0].status = FINISHED;
             jobs_list[0].command_line[0] = '\0';
         } else {
-            fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es: %s\n", jobs_list[0].command_line);
+            fprintf(stderr, "\nSeñal SIGTSTP no enviada porque el proceso a terminar es: %s\n", jobs_list[0].command_line);
         }
     } else {
-        fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
+        fprintf(stderr, "\nSeñal SIGTSTP no enviada debido a que no hay proceso en foreground\n");
     }
 }
 
