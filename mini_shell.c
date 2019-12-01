@@ -118,6 +118,53 @@ int internal_jobs(char **args) {
     return EXIT_SUCCESS;
 }
 
+int internal_fg(char **args){
+    //Primer punto inicio
+    if(!args[1]){
+        args[2]=NULL;       // We have to do this because if the basic source is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
+    }
+
+    if(args[2]){
+        fprintf(stderr, "Error: Demasiados argumentos \n");
+        return -1;
+    }
+    if(args[1]){
+        int pos = (int) args[1];
+        if (pos>=n_pids || pos==0){ //Segundo punto
+            fprintf(stderr, "Error: No existe este trabajo \n");
+            return -1;
+        } else {    //Tercer punto
+            if (jobs_list[pos].status == STOPPED){
+                //SIGCONT(jobs_list[pos].pid);
+                //Cuarto punto
+                jobs_list[pos].status = RUNNING;
+                for (int i=0; jobs_list[pos].command_line; i++){
+                    if (strcmp(jobs_list[pos].command_line[i], "&")==0){
+                        jobs_list[pos].command_line[i] = '\0';
+                    }
+                }
+                jobs_list[0].pid = jobs_list[pos].pid;
+                jobs_list[0].status = jobs_list[pos].status;
+                strcpy(jobs_list[0].command_line, jobs_list[pos].command_line);
+                //Quinto punto
+                jobs_list_remove(pos);
+                //Sexto punto
+                printf("\n%s\n",jobs_list[pos].command_line);
+                while (jobs_list[0].pid!=0){
+                    pause();
+                }
+            }
+        }
+    } else {
+        fprintf(stderr, "\nIndique el numero del proceso a eliminar -> fg [Indice proceso]\n");
+        return -1;
+    }
+}
+
+int internal_bg(char **args){
+    return 0;
+}
+
 // Parses the line into the different arguments and checks if one of them starts with # and ignores everything that comes afterwards.
 int parse_args(char **args, char *line) {
     const char *s = " \t\n\r";
@@ -187,6 +234,12 @@ int check_internal(char **args) {
         return 1;
     } else if(!strcmp(*args,  "source")) {
         internal_source(args);
+        return 1;
+    } else if(!strcmp(*args,  "fg")) {
+        internal_fg(args);
+        return 1;
+    } else if(!strcmp(*args,  "bg")) {
+        internal_bg(args);
         return 1;
     } else if(!strcmp(*args, "exit")){
         exit(0);

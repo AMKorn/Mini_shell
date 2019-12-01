@@ -46,6 +46,8 @@ int jobs_list_remove(int pos);
 int is_background(char **args);
 void ctrlz(int signum);
 int is_output_redirection (char **args);
+int internal_fg(char **args);
+int internal_bg(char **args);
 
 struct info_process {
 	pid_t pid;
