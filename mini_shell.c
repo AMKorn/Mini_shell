@@ -12,6 +12,7 @@ int main(int argc, char *argv[]) {
     n_pids = 0;
 	signal(SIGINT,ctrlc);
 	signal(SIGCHLD,reaper);
+    signal(SIGTSTP,ctrlz);
     char line[COMMAND_LINE_SIZE];
     while (read_line(line)){
         execute_line(line);
@@ -215,10 +216,10 @@ int execute_line(char *line) {
         //Father process
         else {
             if(is_bkg){
-                jobs_list_add(pid, 'E', og_line);
+                jobs_list_add(pid, RUNNING, og_line);
             } else {
                 jobs_list[0].pid = pid;
-                jobs_list[0].status = 'E';
+                jobs_list[0].status = RUNNING;
                 strcpy(jobs_list[0].command_line, og_line); 
                 //printf("%s\n", jobs_list[0].command_line);
                 while(jobs_list[0].pid!=0){
@@ -256,10 +257,32 @@ void reaper(int signum){
     }
 }
 
+void ctrlz(int signum){
+    signal(SIGTSTP, ctrlz);
+    //printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
+    //fflush(stdout);
+    if(jobs_list[0].pid>0){
+        if(strcmp(jobs_list[0].command_line, arg)-10!=0){      // (jobs_list[0].command_line == arg)
+            //fprintf(stderr, "Proceso a terminar: %s \nDiferencia con %s: %d\n", jobs_list[0].command_line, arg, strcmp(jobs_list[0].command_line, arg));
+            kill(jobs_list[0].pid, SIGTSTP);
+            jobs_list[0].status = STOPPED;
+            jobs_list_add(jobs_list[0].pid, jobs_list[0].status, jobs_list[0].command_line);
+
+            jobs_list[0].pid = 0;
+            jobs_list[0].status = FINISHED;
+            jobs_list[0].command_line[0] = '\0';
+        } else {
+            fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es: %s\n", jobs_list[0].command_line);
+        }
+    } else {
+        fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
+    }
+}
+
 void ctrlc(int signum){
     signal(SIGINT, ctrlc);
     //printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
-    fflush(stdout);
+    //fflush(stdout);
     if(jobs_list[0].pid>0){
         if(strcmp(jobs_list[0].command_line, arg)-10!=0){      // (jobs_list[0].command_line == arg)
             //fprintf(stderr, "Proceso a terminar: %s \nDiferencia con %s: %d\n", jobs_list[0].command_line, arg, strcmp(jobs_list[0].command_line, arg));
@@ -313,7 +336,7 @@ int  jobs_list_remove(int pos){
         strcpy(jobs_list[pos].command_line, jobs_list[n_pids].command_line);
         
         jobs_list[n_pids].pid = 0;
-        jobs_list[n_pids].status = 'F';
+        jobs_list[n_pids].status = FINISHED;
         jobs_list[n_pids].command_line[0] = '\0';
 
         n_pids--;

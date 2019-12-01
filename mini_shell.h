@@ -4,6 +4,9 @@
 #define COMPUTER                "MINI_SHELL"
 #define PROMPT                  ROJO_T "%s@%s" RESET_COLOR ":" VERDE_T "%s" RESET_COLOR "%c ", getenv("USER"), COMPUTER, getenv("PWD"),'$'
 #define N_JOBS                  64
+#define STOPPED					'D'
+#define FINISHED				'F'
+#define RUNNING					'E'
 
 // Definitions of color codes.
 #define RESET_COLOR             "\x1b[0m"
