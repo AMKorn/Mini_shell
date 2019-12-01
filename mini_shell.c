@@ -121,7 +121,7 @@ int internal_jobs(char **args) {
 int internal_fg(char **args){
     //Primer punto inicio
     if(!args[1]){
-        args[2]=NULL;       // We have to do this because if the basic source is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
+        args[2]=NULL;       // We have to do this because if the basic fg is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
     }
 
     if(args[2]){
@@ -129,20 +129,18 @@ int internal_fg(char **args){
         return -1;
     }
     if(args[1]){
-        int pos = (int) args[1];
-        if (pos>=n_pids || pos==0){ //Segundo punto
+        int pos = atoi(args[1]);
+        printf("%d\n", pos);
+        if (pos>n_pids || pos==0){ //Segundo punto
             fprintf(stderr, "Error: No existe este trabajo \n");
             return -1;
         } else {    //Tercer punto
             if (jobs_list[pos].status == STOPPED){
-                //SIGCONT(jobs_list[pos].pid);
+                kill(jobs_list[pos].pid, SIGCONT);
                 //Cuarto punto
                 jobs_list[pos].status = RUNNING;
-                for (int i=0; jobs_list[pos].command_line; i++){
-                    if (strcmp(jobs_list[pos].command_line[i], "&")==0){
-                        jobs_list[pos].command_line[i] = '\0';
-                    }
-                }
+                char *ampersand = strchr(jobs_list[0].command_line, '&');
+                ampersand = '\0';
                 jobs_list[0].pid = jobs_list[pos].pid;
                 jobs_list[0].status = jobs_list[pos].status;
                 strcpy(jobs_list[0].command_line, jobs_list[pos].command_line);
@@ -156,7 +154,7 @@ int internal_fg(char **args){
             }
         }
     } else {
-        fprintf(stderr, "\nIndique el numero del proceso a eliminar -> fg [Indice proceso]\n");
+        fprintf(stderr, "\nIndique el numero del proceso a eliminar -> fg [Índice proceso]\n");
         return -1;
     }
 }
