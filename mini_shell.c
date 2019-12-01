@@ -242,14 +242,16 @@ void reaper(int signum){
             } else if (WIFSIGNALED(status)) {
                 printf("[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
             }
+            pid = 0;
         } else {
             int x = jobs_list_find(pid);
             if (WIFEXITED(status)) {
                 //fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
             } else if (WIFSIGNALED(status)) {
-                //fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
+                fprintf(stderr, "[execute_line()→ Proceso en segundo plano %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
             }
             jobs_list_remove(x);
+            pid = 0;
         }
     }
 }
