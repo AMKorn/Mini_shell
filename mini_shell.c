@@ -44,7 +44,7 @@ int internal_cd(char **args) {
     if(!args[1]){
         args[2]=NULL;       // We have to do this because if the basic cd is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
     }
-    printf("%s\n", args[1]);
+    
     if(args[2]){
         fprintf(stderr, "Error: Demasiados argumentos: %s \n", args[2]);
         return -1;
@@ -175,8 +175,9 @@ int internal_bg(char **args){
                 return -1;
             } else {
                 jobs_list[pos].status == RUNNING;
-                char *ampersand = strchr(jobs_list[0].command_line, '&');
-                ampersand = '\0';
+                char *aux = strchr(jobs_list[pos].command_line, '\n');
+                *aux = '\0';
+                strcat(jobs_list[pos].command_line, " &\n");
                 kill(jobs_list[pos].pid, SIGCONT);
                 printf("\nProceso %d reactivado\n", jobs_list[pos].pid);
                 printf("\nProceso reactivado: [%d]\t%d\t%c\t%s\n", pos, jobs_list[pos].pid, jobs_list[pos].status, jobs_list[pos].command_line);
@@ -191,7 +192,7 @@ int internal_bg(char **args){
 
 // Parses the line into the different arguments and checks if one of them starts with # and ignores everything that comes afterwards.
 int parse_args(char **args, char *line) {
-    const char *s = " \t\n\r";
+    const char *s = " \t\r\n";
     int tokens = 0;
 
     args[tokens] = strtok(line, s);
@@ -229,6 +230,8 @@ int parse_args(char **args, char *line) {
 
             args[tokens]++;
 	    }
+
+        //Joining arguments with backslash
         char *backslash;
         while(args[tokens] != NULL && (backslash = strchr(args[tokens], '\\'))){
             char *aux = backslash+1;
@@ -239,6 +242,7 @@ int parse_args(char **args, char *line) {
             }
             strtok(NULL, s);
         }
+        //printf("** %s **", args[tokens]);
     }
     
     return tokens;
