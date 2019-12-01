@@ -157,13 +157,13 @@ int parse_args(char **args, char *line) {
 
             args[tokens]++;
 	    }
-        char *bar;
-        while(args[tokens] != NULL && (bar = strchr(args[tokens], '\\'))){
-            char *aux = bar+1;
+        char *backslash;
+        while(args[tokens] != NULL && (backslash = strchr(args[tokens], '\\'))){
+            char *aux = backslash+1;
             *aux=' ';
             while(*aux){
-                *bar = *aux;
-                bar++; aux++;
+                *backslash = *aux;
+                backslash++; aux++;
             }
             strtok(NULL, s);
         }
