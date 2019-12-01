@@ -43,7 +43,7 @@ int internal_cd(char **args) {
     if(!args[1]){
         args[2]=NULL;       // We have to do this because if the basic cd is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
     }
-
+    
     if(args[2]){
         fprintf(stderr, "Error: Demasiados argumentos \n");
         return -1;
@@ -157,6 +157,16 @@ int parse_args(char **args, char *line) {
 
             args[tokens]++;
 	    }
+        char *bar;
+        if(args[tokens] != NULL && (bar = strchr(args[tokens], '\\'))){
+            char *aux = bar+1;
+            *aux=' ';
+            while(*aux){
+                *bar = *aux;
+                bar++; aux++;
+            }
+            strtok(NULL, s);
+        }
     }
     
     return tokens;
