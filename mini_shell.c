@@ -7,7 +7,7 @@ int n_pids;
 
 int main(int argc, char *argv[]) {
 	jobs_list[0].pid=0;     // As we don't have any son on foreground.
-    jobs_list[1].pid=0;     // This way we avoid segmentation 
+    //jobs_list[1].pid=0;     // This way we avoid segmentation 
     arg = argv[0];
     n_pids = 0;
 	signal(SIGINT,ctrlc);
@@ -110,18 +110,11 @@ int internal_source(char **args) {
 }
 
 int internal_jobs(char **args) {
-    /*int i = 1;
-    while(jobs_list[i] != NULL && jobs_list[i].pid!=0){
-        printf("\n[%d]%d\t%c\t%s", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].command_line);
-       /* for(int i = 1; jobs_list[i].pid; i++){
-            printf("\n[%d]%d\t%c\t%s", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].command_line);
-        }
-        i++;
+    for(int i = 1; i <= n_pids; i++){
+        printf("[%d] %d\t%c\t%s", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].command_line);
     }
-    return 0;*/
+    return EXIT_SUCCESS;
 }
-
-
 
 // Parses the line into the different arguments and checks if one of them starts with # and ignores everything that comes afterwards.
 int parse_args(char **args, char *line) {
@@ -194,7 +187,7 @@ int execute_line(char *line) {
     strcpy(og_line, line);
     char *args[ARGS_SIZE];
     parse_args(args, line);
-    int x = is_background(args);
+    int is_bkg = is_background(args);
 
     if (!check_internal(args)) {
         pid_t pid = fork();
@@ -207,7 +200,7 @@ int execute_line(char *line) {
             signal(SIGCHLD, SIG_DFL);
 		    signal(SIGINT, SIG_IGN);
             //Si la señal esta en background ignora la señal, si no hace la ccion por defecto
-            if(x){
+            if(is_bkg){
                 signal(SIGTSTP, SIG_IGN);
             } else {
                 signal(SIGTSTP, SIG_DFL);           
@@ -221,7 +214,7 @@ int execute_line(char *line) {
         }
         //Father process
         else {
-            if(x){
+            if(is_bkg){
                 jobs_list_add(pid, 'E', og_line);
             } else {
                 jobs_list[0].pid = pid;
@@ -240,7 +233,16 @@ void reaper(int signum){
     signal(SIGCHLD, reaper);
     pid_t pid;
     while ((pid=waitpid(-1, &status, WNOHANG)) > 0) {
-        if(jobs_list[1].pid) {
+        if(pid == jobs_list[0].pid){
+            jobs_list[0].pid = 0;
+            jobs_list[0].status = 'F';
+            jobs_list[0].command_line[0] = '\0';
+            if (WIFEXITED(status)) {
+                //printf("[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
+            } else if (WIFSIGNALED(status)) {
+                printf("[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
+            }
+        } else {
             int x = jobs_list_find(pid);
             if (WIFEXITED(status)) {
                 //fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
@@ -248,28 +250,17 @@ void reaper(int signum){
                 //fprintf(stderr, "[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
             }
             jobs_list_remove(x);
-        } else {
-            if (pid==jobs_list[0].pid){
-                jobs_list[0].pid = 0;
-                jobs_list[0].status = 'F';
-                jobs_list[0].command_line[0] = '\0';
-                if (WIFEXITED(status)) {
-                    //printf("[execute_line()→ Proceso hijo %d finalizado con exit(), estado: %d]\n", pid, WEXITSTATUS(status));
-                } else if (WIFSIGNALED(status)) {
-                    printf("[execute_line()→ Proceso hijo %d finalizado con señal: %d]\n", pid, WTERMSIG(status));
-                }
-            }
         }
     }
 }
 
 void ctrlc(int signum){
     signal(SIGINT, ctrlc);
-    printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
+    //printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
     fflush(stdout);
     if(jobs_list[0].pid>0){
         if(strcmp(jobs_list[0].command_line, arg)-10!=0){      // (jobs_list[0].command_line == arg)
-            fprintf(stderr, "Proceso a terminar: %s \nDiferencia con %s: %d\n", jobs_list[0].command_line, arg, strcmp(jobs_list[0].command_line, arg));
+            //fprintf(stderr, "Proceso a terminar: %s \nDiferencia con %s: %d\n", jobs_list[0].command_line, arg, strcmp(jobs_list[0].command_line, arg));
             kill(jobs_list[0].pid, SIGTERM);
         } else {
             fprintf(stderr, "\nSeñal no enviada porque el proceso a terminar es: %s\n", jobs_list[0].command_line);
@@ -294,10 +285,10 @@ int is_background(char **args){
 
 int jobs_list_add(pid_t pid, char status, char *command_line){
     if (n_pids < N_JOBS){
+        n_pids++;
         jobs_list[n_pids].pid = pid;
         jobs_list[n_pids].status = status;
         strcpy(jobs_list[n_pids].command_line, command_line);
-        n_pids++;
         return EXIT_SUCCESS;
     } else {
         fprintf(stderr, "Error: jobs_list_add número maximo de trabajos alcanzado");
