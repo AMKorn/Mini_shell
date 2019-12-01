@@ -13,6 +13,7 @@ int main(int argc, char *argv[]) {
 	signal(SIGINT,ctrlc);
 	signal(SIGCHLD,reaper);
     signal(SIGTSTP,ctrlz);
+
     char line[COMMAND_LINE_SIZE];
     while (read_line(line)){
         execute_line(line);
@@ -208,20 +209,20 @@ int execute_line(char *line) {
         }
         //Son process
         else if (pid == 0) {
+            is_output_redirection(args);
             signal(SIGCHLD, SIG_DFL);
 		    signal(SIGINT, SIG_IGN);
-            //Si la señal esta en background ignora la señal, si no hace la ccion por defecto
+            //Si la señal esta en background ignora la señal, si no, hace la accion por defecto
             if(is_bkg){
                 signal(SIGTSTP, SIG_IGN);
             } else {
                 signal(SIGTSTP, SIG_DFL);           
             }
-            //printf("[execute_line()→ PID padre: %d]\n", getppid());
-            fflush(stdout);
             if (execvp(args[0], args) < 0) {
                 fprintf(stderr, "Error: Comando \'%s\' no encontrado\n", *args);
                 exit(EXIT_FAILURE);
             }
+            exit(EXIT_SUCCESS);
         }
         //Father process
         else {
@@ -231,7 +232,6 @@ int execute_line(char *line) {
                 jobs_list[0].pid = pid;
                 jobs_list[0].status = RUNNING;
                 strcpy(jobs_list[0].command_line, og_line); 
-                //printf("%s\n", jobs_list[0].command_line);
                 while(jobs_list[0].pid!=0){
                     pause();
                 }
@@ -314,6 +314,25 @@ int is_background(char **args){
             found = 1;
         }
         i++;
+    }
+    return found;
+}
+
+int is_output_redirection(char **args){
+    int i = 1;
+    int found = 0;
+    while(args[i] && !found){
+        if(strcmp(args[i],">") == 0){ // args[i] == '>'
+            args[i] = NULL;
+            found = 1;
+        }
+        i++;
+    }
+    if(found){
+        int fd = open(args[i], O_WRONLY|O_CREAT|O_TRUNC, S_IRUSR | S_IWUSR);
+        if(fd < 0) return EXIT_FAILURE;
+        dup2(fd, 1);
+        close(fd);
     }
     return found;
 }

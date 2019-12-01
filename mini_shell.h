@@ -27,6 +27,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 char* read_line(char *line);
 int execute_line(char *line);
@@ -43,7 +45,7 @@ int jobs_list_find(pid_t pid);
 int jobs_list_remove(int pos);
 int is_background(char **args);
 void ctrlz(int signum);
-
+int is_output_redirection (char **args);
 
 struct info_process {
 	pid_t pid;

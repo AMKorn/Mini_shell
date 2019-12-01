@@ -1,0 +1,6 @@
+README.md
+a.out
+fichero.txt
+mini_shell
+mini_shell.c
+mini_shell.h
