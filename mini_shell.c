@@ -83,7 +83,7 @@ int internal_export(char **args) {
 
 int internal_source(char **args) {
     if(!args[1]){
-        args[2]=NULL;       // We have to do this because if the basic source is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
+        args[2]=NULL;       // We have to do this because if source is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
     }
     
     if(args[2]){
@@ -120,7 +120,7 @@ int internal_jobs(char **args) {
 
 int internal_fg(char **args){
     if(!args[1]){
-        args[2]=NULL;       // We have to do this because if the basic fg is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
+        args[2]=NULL;       // We have to do this because if fg is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
     }
 
     if(args[2]){
@@ -157,7 +157,7 @@ int internal_fg(char **args){
 
 int internal_bg(char **args){
     if(!args[1]){
-        args[2]=NULL;       // We have to do this because if the basic source is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
+        args[2]=NULL;       // We have to do this because if bg is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
     }
 
     if(args[2]){
@@ -175,11 +175,8 @@ int internal_bg(char **args){
                 return -1;
             } else {
                 jobs_list[pos].status == RUNNING;
-                for (int i=0; jobs_list[pos].command_line; i++){
-                    if (strcmp(jobs_list[pos].command_line[i], "\0")==0){
-                        jobs_list[pos].command_line[i] = " &";
-                    }
-                }
+                char *ampersand = strchr(jobs_list[0].command_line, '&');
+                ampersand = '\0';
                 kill(jobs_list[pos].pid, SIGCONT);
                 printf("\nProceso %d reactivado\n", jobs_list[pos].pid);
                 printf("\nProceso reactivado: [%d]\t%d\t%c\t%s\n", pos, jobs_list[pos].pid, jobs_list[pos].status, jobs_list[pos].command_line);
