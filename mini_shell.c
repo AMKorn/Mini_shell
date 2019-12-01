@@ -155,7 +155,7 @@ int internal_fg(char **args){
         }
     } else {
         fprintf(stderr, "\nIndique el numero del proceso a eliminar -> fg [Índice proceso]\n");
-        return -1;
+        return EXIT_FAILURE;
     }
 }
 
