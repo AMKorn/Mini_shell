@@ -119,7 +119,6 @@ int internal_jobs(char **args) {
 }
 
 int internal_fg(char **args){
-    //Primer punto inicio
     if(!args[1]){
         args[2]=NULL;       // We have to do this because if the basic fg is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
     }
@@ -131,22 +130,19 @@ int internal_fg(char **args){
     if(args[1]){
         int pos = atoi(args[1]);
         printf("%d\n", pos);
-        if (pos>n_pids || pos==0){ //Segundo punto
+        if (pos>n_pids || pos==0){
             fprintf(stderr, "Error: No existe este trabajo \n");
             return -1;
-        } else {    //Tercer punto
+        } else {
             if (jobs_list[pos].status == STOPPED){
                 kill(jobs_list[pos].pid, SIGCONT);
-                //Cuarto punto
                 jobs_list[pos].status = RUNNING;
                 char *ampersand = strchr(jobs_list[0].command_line, '&');
                 ampersand = '\0';
                 jobs_list[0].pid = jobs_list[pos].pid;
                 jobs_list[0].status = jobs_list[pos].status;
                 strcpy(jobs_list[0].command_line, jobs_list[pos].command_line);
-                //Quinto punto
                 jobs_list_remove(pos);
-                //Sexto punto
                 printf("\n%s\n",jobs_list[pos].command_line);
                 while (jobs_list[0].pid!=0){
                     pause();
@@ -160,7 +156,40 @@ int internal_fg(char **args){
 }
 
 int internal_bg(char **args){
-    return 0;
+    if(!args[1]){
+        args[2]=NULL;       // We have to do this because if the basic source is the first command used, args[2] has no assigned value and may not be NULL, as it is not touched during parse_args
+    }
+
+    if(args[2]){
+        fprintf(stderr, "Error: Demasiados argumentos \n");
+        return -1;
+    }
+    if(args[1]){
+        int pos = atoi(args[1]);
+        if (pos>n_pids || pos==0){
+            fprintf(stderr, "Error: No existe este trabajo \n");
+            return -1;
+        } else {
+            if (jobs_list[pos].status == RUNNING){
+                fprintf(stderr, "Error: El trabajo ya esta en 2º plano \n");
+                return -1;
+            } else {
+                jobs_list[pos].status == RUNNING;
+                for (int i=0; jobs_list[pos].command_line; i++){
+                    if (strcmp(jobs_list[pos].command_line[i], "\0")==0){
+                        jobs_list[pos].command_line[i] = " &";
+                    }
+                }
+                kill(jobs_list[pos].pid, SIGCONT);
+                printf("\nProceso %d reactivado\n", jobs_list[pos].pid);
+                printf("\nProceso reactivado: [%d]\t%d\t%c\t%s\n", pos, jobs_list[pos].pid, jobs_list[pos].status, jobs_list[pos].command_line);
+                return 0;
+            }
+        }
+    } else {
+        fprintf(stderr, "\nIndique el numero del proceso a reactivar -> fg [Indice proceso]\n");
+        return -1;
+    }
 }
 
 // Parses the line into the different arguments and checks if one of them starts with # and ignores everything that comes afterwards.
