@@ -25,17 +25,16 @@ char *read_line(char *line) {
     printf(PROMPT);
     fflush(stdout);   
     char *ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
-
-    if (!ptr) {  //ptr==NULL
-        printf("\r");
-        if (feof(stdin)) { //feof(stdin!=0)
-            exit(0);
-        }
-        else {
-            ptr = line; // si no al pulsar inicialmente CTRL+C sale fuera del shell
-            ptr[0] = 0; // Si se omite esta línea aparece error ejecución ": no se encontró la orden"*/
-        }
-   }
+    if(ptr){
+        free(ptr);
+        ptr = (char *)NULL;
+    }
+    ptr = readline("");
+    strcpy(line,ptr);
+    
+    if (ptr && *ptr){
+        add_history(ptr);
+    }
 
    return ptr;
 }
@@ -353,6 +352,7 @@ void ctrlz(int signum){
     //printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
     //fflush(stdout);
     if(jobs_list[0].pid>0){
+        printf("\n");
         if(strcmp(jobs_list[0].command_line, arg)-10!=0){      // (jobs_list[0].command_line == arg)
             //fprintf(stderr, "Proceso a terminar: %s \nDiferencia con %s: %d\n", jobs_list[0].command_line, arg, strcmp(jobs_list[0].command_line, arg));
             kill(jobs_list[0].pid, SIGTSTP);
@@ -366,15 +366,22 @@ void ctrlz(int signum){
             fprintf(stderr, "\nSeñal SIGTSTP no enviada porque el proceso en foreground es: %s\n", jobs_list[0].command_line);
         }
     } else {
+        #ifdef USE_READLINE
+           printf("\n" PROMPT);
+        #else
+           printf("\n");
+        #endif
         fprintf(stderr, "\nSeñal SIGTSTP no enviada debido a que no hay proceso en foreground\n");
     }
+    fflush(stdout);
 }
 
-void ctrlc(int signum){
+void ctrlc(int signum){ 
     signal(SIGINT, ctrlc);
     //printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
     //fflush(stdout);
     if(jobs_list[0].pid>0){
+        printf("\n");
         if(strcmp(jobs_list[0].command_line, arg)-10!=0){      // (jobs_list[0].command_line == arg)
             //fprintf(stderr, "Proceso a terminar: %s \nDiferencia con %s: %d\n", jobs_list[0].command_line, arg, strcmp(jobs_list[0].command_line, arg));
             kill(jobs_list[0].pid, SIGTERM);
@@ -382,6 +389,11 @@ void ctrlc(int signum){
             fprintf(stderr, "\nSeñal SIGTERM no enviada porque el proceso en foreground es: %s\n", jobs_list[0].command_line);
         }
     } else {
+        #ifdef USE_READLINE
+           printf("\n" PROMPT);
+        #else
+           printf("\n");
+        #endif
         fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
     }
 }
