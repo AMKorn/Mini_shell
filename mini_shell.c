@@ -190,7 +190,11 @@ int internal_bg(char **args){
 
 // Parses the line into the different arguments and checks if one of them starts with # and ignores everything that comes afterwards.
 int parse_args(char **args, char *line) {
+    #ifdef USE_READLINE
+    const char *s = " \t\r";
+    #else
     const char *s = " \t\r\n";
+    #endif
     int tokens = 0;
 
     args[tokens] = strtok(line, s);
