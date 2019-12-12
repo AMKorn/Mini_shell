@@ -7,7 +7,6 @@ int n_pids;
 
 int main(int argc, char *argv[]) {
 	jobs_list[0].pid=0;     // As we don't have any son on foreground.
-    //jobs_list[1].pid=0;     // This way we avoid segmentation 
     arg = argv[0];
     n_pids = 0;
 	signal(SIGINT,ctrlc);
@@ -197,7 +196,6 @@ int parse_args(char **args, char *line) {
 
     args[tokens] = strtok(line, s);
 
-
     while (args[tokens] != NULL) {
         tokens++;
     
@@ -242,7 +240,6 @@ int parse_args(char **args, char *line) {
             }
             strtok(NULL, s);
         }
-        //printf("** %s **", args[tokens]);
     }
     
     return tokens;
