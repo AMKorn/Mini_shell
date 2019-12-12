@@ -27,7 +27,10 @@ char *read_line(char *line) {
     char *ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
     strtok(line, "\n");
 
-    if (!ptr) {  //ptr==NULL
+    #ifdef USE_READLINE
+        
+    #else
+        if (!ptr) {  //ptr==NULL
         printf("\r");
         if (feof(stdin)) { //feof(stdin!=0)
             exit(0);
@@ -36,7 +39,8 @@ char *read_line(char *line) {
             ptr = line; // si no al pulsar inicialmente CTRL+C sale fuera del shell
             ptr[0] = 0; // Si se omite esta línea aparece error ejecución ": no se encontró la orden"*/
         }
-   }
+    }
+    #endif
 
    return ptr;
 }
