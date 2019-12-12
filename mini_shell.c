@@ -23,12 +23,15 @@ int main(int argc, char *argv[]) {
 char *read_line(char *line) {
     printf(PROMPT);
     fflush(stdout);   
-    char *ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
-    strtok(line, "\n");
 
     #ifdef USE_READLINE
-        
+        char *ptr = read_line(get_prompt());
+        add_history(ptr);
+        free(ptr);
+        strcpy(line, ptr);
     #else
+        char *ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
+        strtok(line, "\n");
         if (!ptr) {  //ptr==NULL
         printf("\r");
         if (feof(stdin)) { //feof(stdin!=0)
@@ -375,7 +378,7 @@ void ctrlz(int signum){
     } else {
         fprintf(stderr, "\nSeñal SIGTSTP no enviada debido a que no hay proceso en foreground\n");
         #ifdef USE_READLINE
-           printf("\n%s", PROMPT);
+           printf("\n%s", get_prompt());
         #else
            printf("\n");
         #endif
@@ -399,7 +402,7 @@ void ctrlc(int signum){
     } else {
         fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
         #ifdef USE_READLINE
-           printf("\n%s", PROMPT);
+           printf("\n%s", get_prompt());
         #else
            printf("\n");
         #endif
@@ -476,3 +479,13 @@ int  jobs_list_remove(int pos){
         return EXIT_FAILURE;
     }
 }
+
+char* get_prompt(){
+    char buffer [COMMAND_LINE_SIZE];
+    sprintf(buffer, PROMPT);
+
+    char* prompt;
+    strcpy(prompt, buffer);
+
+    return prompt;
+} 
