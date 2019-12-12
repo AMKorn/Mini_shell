@@ -7,6 +7,7 @@
 #define STOPPED					'D'
 #define FINISHED				'F'
 #define RUNNING					'E'
+#define USE_READLINE
 
 // Definitions of color codes.
 #define RESET_COLOR             "\x1b[0m"
@@ -29,6 +30,10 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#ifdef USE_READLINE
+#include <readline/readline.h>
+#include <readline/history.h>
+#endif
 
 char* read_line(char *line);
 int execute_line(char *line);
