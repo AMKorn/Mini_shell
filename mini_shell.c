@@ -23,36 +23,22 @@ int main(int argc, char *argv[]) {
 char *read_line(char *line) {
     printf(PROMPT);
     fflush(stdout);   
-    static char *ptr = (char *)NULL;
-    ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
-    
-    #ifdef USE_READLINE
-        if(ptr){
-            free(ptr);
-            ptr = (char *)NULL;
-        }
-        
-        ptr = readline(get_Prompt());
-        strcpy(line,ptr);
+    char *ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
+    strtok(line, "\n");
 
-        if(ptr && *ptr){
-            add_history(ptr);
-        }
+    #ifdef USE_READLINE
         
+    #else
+        if (!ptr) {  //ptr==NULL
+        printf("\r");
         if (feof(stdin)) { //feof(stdin!=0)
             exit(0);
         }
-    #else
-        strtok(ptr, "\n");
-        if (!ptr) {  //ptr==NULL
-            printf("\r");
-            if (feof(stdin)) { //feof(stdin!=0)
-                exit(0);
-            }
-        } else {
+        else {
             ptr = line; // si no al pulsar inicialmente CTRL+C sale fuera del shell
             ptr[0] = 0; // Si se omite esta línea aparece error ejecución ": no se encontró la orden"*/
         }
+    }
     #endif
 
    return ptr;
@@ -387,17 +373,18 @@ void ctrlz(int signum){
             fprintf(stderr, "\nSeñal SIGTSTP no enviada porque el proceso en foreground es: %s\n", jobs_list[0].command_line);
         }
     } else {
+        fprintf(stderr, "\nSeñal SIGTSTP no enviada debido a que no hay proceso en foreground\n");
         #ifdef USE_READLINE
-           printf("\n" PROMPT);
+           printf("\n%s", PROMPT);
         #else
            printf("\n");
         #endif
-        fprintf(stderr, "\nSeñal SIGTSTP no enviada debido a que no hay proceso en foreground\n");
+
     }
     fflush(stdout);
 }
 
-void ctrlc(int signum){ 
+void ctrlc(int signum){
     signal(SIGINT, ctrlc);
     //printf("\nPID DESDE CTRLC: %d\n", jobs_list[0].pid);
     //fflush(stdout);
@@ -410,13 +397,14 @@ void ctrlc(int signum){
             fprintf(stderr, "\nSeñal SIGTERM no enviada porque el proceso en foreground es: %s\n", jobs_list[0].command_line);
         }
     } else {
+        fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
         #ifdef USE_READLINE
-           printf("\n" PROMPT);
+           printf("\n%s", PROMPT);
         #else
            printf("\n");
         #endif
-        fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
     }
+    fflush(stdout);
 }
 
 int is_background(char **args){
@@ -487,14 +475,4 @@ int  jobs_list_remove(int pos){
     } else {
         return EXIT_FAILURE;
     }
-}
-
-char* get_Prompt(){
-    char buffer [COMMAND_LINE_SIZE];
-    sprintf(buffer, ROJO_T "%s@%s" RESET_COLOR ":" VERDE_T "%s" RESET_COLOR "%c ", getenv("USER"), COMPUTER, getenv("PWD"), '$' );
-    
-    char* prompt;
-    strcpy(prompt, buffer);
-    
-    return prompt;
 }
