@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
 	signal(SIGINT,ctrlc);
 	signal(SIGCHLD,reaper);
     signal(SIGTSTP,ctrlz);
-
+    
     char line[COMMAND_LINE_SIZE];
     while (read_line(line)){
         execute_line(line);
@@ -23,12 +23,16 @@ int main(int argc, char *argv[]) {
 char *read_line(char *line) {
     printf(PROMPT);
     fflush(stdout);   
-
     #ifdef USE_READLINE
         char *ptr = read_line(get_prompt());
-        add_history(ptr);
-        free(ptr);
-        strcpy(line, ptr);
+        printf("%s",ptr);
+        if(ptr && *ptr){
+            add_history(ptr);
+            strcpy(line, ptr);
+            free(ptr);
+        } else {
+            exit(0);
+        }
     #else
         char *ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
         strtok(line, "\n");
@@ -120,7 +124,7 @@ int internal_source(char **args) {
 
 int internal_jobs(char **args) {
     for(int i = 1; i <= n_pids; i++){
-        printf("[%d] %d\t%c\t%s", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].command_line);
+        printf("[%d] %d\t%c\t%s\n", i, jobs_list[i].pid, jobs_list[i].status, jobs_list[i].command_line);
     }
     return EXIT_SUCCESS;
 }
@@ -481,11 +485,10 @@ int  jobs_list_remove(int pos){
 }
 
 char* get_prompt(){
-    char buffer [COMMAND_LINE_SIZE];
-    sprintf(buffer, PROMPT);
-
-    char* prompt;
-    strcpy(prompt, buffer);
-
-    return prompt;
+    char s[COMMAND_LINE_SIZE];
+    strcpy(s, "\x1b[91m");
+    strcat(s, getenv("USER"));
+    strcat(s, "@MINI_SHELL\x1b[0m:\x1b[92m");
+    strcat(s, getenv("PWD"));
+    return strcat(s, "\x1b[0m$");
 } 
