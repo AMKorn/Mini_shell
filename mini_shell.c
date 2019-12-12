@@ -23,17 +23,37 @@ int main(int argc, char *argv[]) {
 char *read_line(char *line) {
     printf(PROMPT);
     fflush(stdout);   
-    char *ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
-    if(ptr){
-        free(ptr);
-        ptr = (char *)NULL;
-    }
-    ptr = readline("");
-    strcpy(line,ptr);
+    static char *ptr = (char *)NULL;
+    ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
     
-    if (ptr && *ptr){
-        add_history(ptr);
-    }
+    #ifdef USE_READLINE
+        if(ptr){
+            free(ptr);
+            ptr = (char *)NULL;
+        }
+        
+        ptr = readline(get_Prompt());
+        strcpy(line,ptr);
+
+        if(ptr && *ptr){
+            add_history(ptr);
+        }
+        
+        if (feof(stdin)) { //feof(stdin!=0)
+            exit(0);
+        }
+    #else
+        strtok(ptr, "\n");
+        if (!ptr) {  //ptr==NULL
+            printf("\r");
+            if (feof(stdin)) { //feof(stdin!=0)
+                exit(0);
+            }
+        } else {
+            ptr = line; // si no al pulsar inicialmente CTRL+C sale fuera del shell
+            ptr[0] = 0; // Si se omite esta línea aparece error ejecución ": no se encontró la orden"*/
+        }
+    #endif
 
    return ptr;
 }
@@ -354,7 +374,7 @@ void ctrlz(int signum){
     //fflush(stdout);
     if(jobs_list[0].pid>0){
         printf("\n");
-        if(strcmp(jobs_list[0].command_line, arg)-10!=0){      // (jobs_list[0].command_line == arg)
+        if(strcmp(jobs_list[0].command_line, arg)!=0){      // (jobs_list[0].command_line == arg)
             //fprintf(stderr, "Proceso a terminar: %s \nDiferencia con %s: %d\n", jobs_list[0].command_line, arg, strcmp(jobs_list[0].command_line, arg));
             kill(jobs_list[0].pid, SIGTSTP);
             jobs_list[0].status = STOPPED;
@@ -383,7 +403,7 @@ void ctrlc(int signum){
     //fflush(stdout);
     if(jobs_list[0].pid>0){
         printf("\n");
-        if(strcmp(jobs_list[0].command_line, arg)-10!=0){      // (jobs_list[0].command_line == arg)
+        if(strcmp(jobs_list[0].command_line, arg)!=0){      // (jobs_list[0].command_line == arg)
             //fprintf(stderr, "Proceso a terminar: %s \nDiferencia con %s: %d\n", jobs_list[0].command_line, arg, strcmp(jobs_list[0].command_line, arg));
             kill(jobs_list[0].pid, SIGTERM);
         } else {
@@ -467,4 +487,14 @@ int  jobs_list_remove(int pos){
     } else {
         return EXIT_FAILURE;
     }
+}
+
+char* get_Prompt(){
+    char buffer [COMMAND_LINE_SIZE];
+    sprintf(buffer, ROJO_T "%s@%s" RESET_COLOR ":" VERDE_T "%s" RESET_COLOR "%c ", getenv("USER"), COMPUTER, getenv("PWD"), '$' );
+    
+    char* prompt;
+    strcpy(prompt, buffer);
+    
+    return prompt;
 }
