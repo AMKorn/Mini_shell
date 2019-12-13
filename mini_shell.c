@@ -4,6 +4,7 @@ static struct info_process jobs_list[N_JOBS];
 int status;
 char *arg;
 int n_pids;
+char prompt[COMMAND_LINE_SIZE];
 
 int main(int argc, char *argv[]) {
 	jobs_list[0].pid=0;     // As we don't have any son on foreground.
@@ -13,6 +14,7 @@ int main(int argc, char *argv[]) {
 	signal(SIGCHLD,reaper);
     signal(SIGTSTP,ctrlz);
     char line[COMMAND_LINE_SIZE];
+    get_prompt();
     while (read_line(line)){
         execute_line(line);
     }
@@ -23,11 +25,12 @@ char *read_line(char *line) {
     char *ptr;
 
     #ifdef USE_READLINE
-        ptr = readline(get_prompt());
-        if(ptr) {
+        ptr = readline(prompt);
+        fflush(stdout);
+        if(strlen(ptr) > 0) {
             add_history(ptr);
             strcpy(line, ptr);
-            //free(ptr);
+            free(ptr);
         } else {
             exit(0);
         }
@@ -381,7 +384,7 @@ void ctrlz(int signum){
     } else {
         fprintf(stderr, "\nSeñal SIGTSTP no enviada debido a que no hay proceso en foreground\n");
         #ifdef USE_READLINE
-           printf("\n%s", get_prompt());
+           printf("\n%s", prompt)   ;
         #else
            printf("\n");
         #endif
@@ -405,7 +408,7 @@ void ctrlc(int signum){
     } else {
         fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
         #ifdef USE_READLINE
-           printf("\n%s", get_prompt());
+           printf("\n%s", prompt);
         #else
            printf("\n");
         #endif
@@ -483,11 +486,12 @@ int  jobs_list_remove(int pos){
     }
 }
 
-char* get_prompt(){
+void get_prompt(){
     char s[COMMAND_LINE_SIZE];
     strcpy(s, "\x1b[91m");
     strcat(s, getenv("USER"));
     strcat(s, "@MINI_SHELL\x1b[0m:\x1b[92m");
     strcat(s, getenv("PWD"));
-    return strcat(s, "\x1b[0m$");
+    strcat(s, "\x1b[0m$");
+    strcpy(prompt,s);
 }
