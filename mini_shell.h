@@ -7,7 +7,7 @@
 #define STOPPED					'D'
 #define FINISHED				'F'
 #define RUNNING					'E'
-//#define USE_READLINE
+#define USE_READLINE
 
 // Definitions of color codes.
 #define RESET_COLOR             "\x1b[0m"

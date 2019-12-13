@@ -12,7 +12,6 @@ int main(int argc, char *argv[]) {
 	signal(SIGINT,ctrlc);
 	signal(SIGCHLD,reaper);
     signal(SIGTSTP,ctrlz);
-    
     char line[COMMAND_LINE_SIZE];
     while (read_line(line)){
         execute_line(line);
@@ -21,34 +20,34 @@ int main(int argc, char *argv[]) {
 
 // Prints the prompt and then reads the command introduced by the user.
 char *read_line(char *line) {
-    printf(PROMPT);
-    fflush(stdout);   
+    char *ptr;
+
     #ifdef USE_READLINE
-        char *ptr = read_line(get_prompt());
-        printf("%s",ptr);
-        if(ptr && *ptr){
+        ptr = readline(get_prompt());
+        if(ptr) {
             add_history(ptr);
             strcpy(line, ptr);
-            free(ptr);
+            //free(ptr);
         } else {
             exit(0);
         }
     #else
-        char *ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
+        printf(PROMPT);
+        fflush(stdout);
+        ptr = fgets(line, COMMAND_LINE_SIZE, stdin);
         strtok(line, "\n");
         if (!ptr) {  //ptr==NULL
-        printf("\r");
-        if (feof(stdin)) { //feof(stdin!=0)
-            exit(0);
+            printf("\r");
+            if (feof(stdin)) { //feof(stdin!=0)
+                exit(0);
+            } else {
+                ptr = line; // si no al pulsar inicialmente CTRL+C sale fuera del shell
+                ptr[0] = 0; // Si se omite esta línea aparece error ejecución ": no se encontró la orden"*/
+            }
         }
-        else {
-            ptr = line; // si no al pulsar inicialmente CTRL+C sale fuera del shell
-            ptr[0] = 0; // Si se omite esta línea aparece error ejecución ": no se encontró la orden"*/
-        }
-    }
     #endif
-
-   return ptr;
+    
+    return ptr;
 }
 
 int internal_cd(char **args) {
@@ -491,4 +490,4 @@ char* get_prompt(){
     strcat(s, "@MINI_SHELL\x1b[0m:\x1b[92m");
     strcat(s, getenv("PWD"));
     return strcat(s, "\x1b[0m$");
-} 
+}
