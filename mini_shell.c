@@ -25,14 +25,15 @@ char *read_line(char *line) {
     char *ptr;
 
     #ifdef USE_READLINE
+        get_prompt();
         ptr = readline(prompt);
         fflush(stdout);
-        if(strlen(ptr) > 0) {
+        if(ptr) {
             add_history(ptr);
             strcpy(line, ptr);
             free(ptr);
         } else {
-            exit(0);
+            //exit(0);
         }
     #else
         printf(PROMPT);
@@ -492,6 +493,6 @@ void get_prompt(){
     strcat(s, getenv("USER"));
     strcat(s, "@MINI_SHELL\x1b[0m:\x1b[92m");
     strcat(s, getenv("PWD"));
-    strcat(s, "\x1b[0m$");
+    strcat(s, "\x1b[0m$ ");
     strcpy(prompt,s);
 }
