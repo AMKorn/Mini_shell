@@ -1,3 +1,9 @@
+/* Authors:
+ * Korn, Andreas Manuel
+ * Márquez Cunill, Javier
+ * Vega García, Sergio
+ **/
+
 #include "mini_shell.h"
 
 static struct info_process jobs_list[N_JOBS];
@@ -143,7 +149,6 @@ int internal_fg(char **args){
     }
     if(args[1]){
         int pos = atoi(args[1]);
-        printf("%d\n", pos);
         if (pos>n_pids || pos==0){
             fprintf(stderr, "Error: No existe este trabajo \n");
             return -1;
@@ -151,8 +156,9 @@ int internal_fg(char **args){
             if (jobs_list[pos].status == STOPPED){
                 kill(jobs_list[pos].pid, SIGCONT);
                 jobs_list[pos].status = RUNNING;
-                char *ampersand = strchr(jobs_list[0].command_line, '&');
-                ampersand = '\0';
+                strtok(jobs_list[0].command_line, "&");
+                //char *ampersand = strchr(jobs_list[0].command_line, '&');
+                //ampersand = '\0';
                 jobs_list[0].pid = jobs_list[pos].pid;
                 jobs_list[0].status = jobs_list[pos].status;
                 strcpy(jobs_list[0].command_line, jobs_list[pos].command_line);
@@ -167,6 +173,7 @@ int internal_fg(char **args){
         fprintf(stderr, "\nIndique el numero del proceso a eliminar -> fg [Índice proceso]\n");
         return EXIT_FAILURE;
     }
+    return EXIT_SUCCESS;
 }
 
 int internal_bg(char **args){
@@ -188,13 +195,12 @@ int internal_bg(char **args){
                 fprintf(stderr, "Error: El trabajo ya esta en 2º plano \n");
                 return -1;
             } else {
-                jobs_list[pos].status == RUNNING;
+                jobs_list[pos].status = RUNNING;
                 char *aux = strchr(jobs_list[pos].command_line, '\n');
                 *aux = '\0';
                 strcat(jobs_list[pos].command_line, " &\n");
                 kill(jobs_list[pos].pid, SIGCONT);
-                printf("\nProceso %d reactivado\n", jobs_list[pos].pid);
-                printf("\nProceso reactivado: [%d]\t%d\t%c\t%s\n", pos, jobs_list[pos].pid, jobs_list[pos].status, jobs_list[pos].command_line);
+                printf("Proceso reactivado: [%d]\t%d\t%c\t%s", pos, jobs_list[pos].pid, jobs_list[pos].status, jobs_list[pos].command_line);
                 return 0;
             }
         }
@@ -335,6 +341,7 @@ int execute_line(char *line) {
             }
         }
     }
+    return EXIT_SUCCESS;
 }
 
 void reaper(int signum){
@@ -380,10 +387,10 @@ void ctrlz(int signum){
             jobs_list[0].status = FINISHED;
             jobs_list[0].command_line[0] = '\0';
         } else {
-            fprintf(stderr, "\nSeñal SIGTSTP no enviada porque el proceso en foreground es: %s\n", jobs_list[0].command_line);
+            //fprintf(stderr, "\nSeñal SIGTSTP no enviada porque el proceso en foreground es: %s\n", jobs_list[0].command_line);
         }
     } else {
-        fprintf(stderr, "\nSeñal SIGTSTP no enviada debido a que no hay proceso en foreground\n");
+        //fprintf(stderr, "\nSeñal SIGTSTP no enviada debido a que no hay proceso en foreground\n");
         #ifdef USE_READLINE
            printf("\n%s", prompt)   ;
         #else
@@ -404,10 +411,10 @@ void ctrlc(int signum){
             //fprintf(stderr, "Proceso a terminar: %s \nDiferencia con %s: %d\n", jobs_list[0].command_line, arg, strcmp(jobs_list[0].command_line, arg));
             kill(jobs_list[0].pid, SIGTERM);
         } else {
-            fprintf(stderr, "\nSeñal SIGTERM no enviada porque el proceso en foreground es: %s\n", jobs_list[0].command_line);
+            //fprintf(stderr, "\nSeñal SIGTERM no enviada porque el proceso en foreground es: %s\n", jobs_list[0].command_line);
         }
     } else {
-        fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
+        //fprintf(stderr, "\nSeñal SIGTERM no enviada debido a que no hay proceso en foreground\n");
         #ifdef USE_READLINE
            printf("\n%s", prompt);
         #else
@@ -468,6 +475,7 @@ int jobs_list_find(pid_t pid){
             return i;
         }
     }
+    return EXIT_FAILURE;
 }
 
 int  jobs_list_remove(int pos){
